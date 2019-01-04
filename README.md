@@ -1,5 +1,6 @@
 # CoffeeSociety Accounting Service
 [![Build Status](https://travis-ci.org/asc-lab/coffee-society-accounting.svg?branch=master)](https://travis-ci.org/asc-lab/coffee-society-accounting)
+[![Code Quality](https://sonarcloud.io/api/project_badges/measure?project=pl.altkom.coffee.accounting%3Aaccounting-parent&metric=alert_status)](https://sonarcloud.io/dashboard?id=pl.altkom.coffee.accounting%3Aaccounting-parent)
 
 ## Building
 

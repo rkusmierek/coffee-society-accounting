@@ -2,11 +2,23 @@ language: java
 
 services:
     - docker
-    
+
+addons:
+    sonarcloud:
+        organization: "asc-lab"
+        token:
+            secure: $SONAR_TOKEN
+
 script:
     - make
     - make docker-login
     - make TAG=${TRAVIS_BUILD_NUMBER} tag
     - make TAG=${TRAVIS_BUILD_NUMBER} push-tag
     - make push-latest
+    - make analyze
+
+cache:
+    directories:
+        - '$HOME/.m2/repository'
+        - '$HOME/.sonar/cache'
 
