@@ -16,7 +16,6 @@ class AccountCreationSaga : AbstractAccountSaga() {
     fun handle(event: MemberCreatedEvent) {
         logger.info("Account creation saga started")
         with(event) {
-            logger.info("event id " + memberId)
             commandGateway.send<Void>(OpenAccountCommand(memberId))
         }
     }

@@ -20,8 +20,8 @@ class Account {
     constructor()
 
     @CommandHandler
-    fun on(command: OpenAccountCommand) {
-        logger.info("in account command handler")
+    constructor(command: OpenAccountCommand) {
+        logger.debug("OpenAccountCommand handler: {}", command.toString())
         with(command) {
             AggregateLifecycle.apply(AccountOpenedEvent(memberId, balance))
         }
@@ -29,15 +29,16 @@ class Account {
 
     @EventSourcingHandler
     fun handle(event: MemberCreatedEvent) {
+        logger.debug("MemberCreatedEvent handler: {}", event.toString())
         memberId = event.memberId
     }
 
     @EventSourcingHandler
     fun handle(event: AccountOpenedEvent) {
+        logger.debug("AccountOpenedEvent handler: {}", event.toString())
         balance = event.balance
         memberId = event.memberId
     }
-
 
     companion object : KLogging()
 }
