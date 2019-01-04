@@ -3,10 +3,14 @@ package pl.altkom.coffee.accounting.domain
 import mu.KLogging
 import org.axonframework.commandhandling.CommandHandler
 import org.axonframework.eventsourcing.EventSourcingHandler
+import org.axonframework.messaging.responsetypes.InstanceResponseType
 import org.axonframework.modelling.command.AggregateIdentifier
 import org.axonframework.modelling.command.AggregateLifecycle
+import org.axonframework.queryhandling.QueryGateway
 import org.axonframework.spring.stereotype.Aggregate
 import pl.altkom.coffee.accounting.api.AccountOpenedEvent
+import pl.altkom.coffee.accounting.query.AccountByMemberIdQuery
+import pl.altkom.coffee.accounting.query.AccountEntry
 import pl.altkom.coffee.members.api.MemberCreatedEvent
 import java.math.BigDecimal
 
@@ -20,10 +24,14 @@ class Account {
     constructor()
 
     @CommandHandler
-    constructor(command: OpenAccountCommand) {
+    constructor(command: OpenAccountCommand, queryGateway: QueryGateway) {
         logger.debug("OpenAccountCommand handler: {}", command.toString())
         with(command) {
-            AggregateLifecycle.apply(AccountOpenedEvent(memberId, balance))
+            if(queryGateway.query(AccountByMemberIdQuery(memberId), InstanceResponseType(AccountEntry::class.java)).get() == null) {
+                AggregateLifecycle.apply(AccountOpenedEvent(memberId, balance))
+            } else {
+                throw MemberAlreadyHasAccountException()
+            }
         }
     }
 
