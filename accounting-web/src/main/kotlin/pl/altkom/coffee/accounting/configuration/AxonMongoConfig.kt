@@ -15,10 +15,10 @@ class AxonMongoConfig {
     @Bean
     fun mongoTemplate(mongoClient: MongoClient): MongoTemplate {
         return DefaultMongoTemplate.builder()
-                .domainEventsCollectionName("domainevents_accrual")
-                .sagasCollectionName("sagas_accrual")
-                .snapshotEventsCollectionName("snapshotevents_accrual")
-                .trackingTokensCollectionName("trackingtokens_accrual")
+                .domainEventsCollectionName("domainevents_accounting")
+                .sagasCollectionName("sagas_accounting")
+                .snapshotEventsCollectionName("snapshotevents_accounting")
+                .trackingTokensCollectionName("trackingtokens_accounting")
                 .mongoDatabase(mongoClient)
                 .build()
     }
