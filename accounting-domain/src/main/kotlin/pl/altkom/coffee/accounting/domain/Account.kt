@@ -8,9 +8,7 @@ import org.axonframework.modelling.command.AggregateIdentifier
 import org.axonframework.modelling.command.AggregateLifecycle
 import org.axonframework.queryhandling.QueryGateway
 import org.axonframework.spring.stereotype.Aggregate
-import pl.altkom.coffee.accounting.api.AccountOpenedEvent
-import pl.altkom.coffee.accounting.api.AssetAddedEvent
-import pl.altkom.coffee.accounting.api.LiabilityAddedEvent
+import pl.altkom.coffee.accounting.api.*
 import pl.altkom.coffee.accounting.query.AccountByMemberIdQuery
 import pl.altkom.coffee.accounting.query.AccountEntry
 import pl.altkom.coffee.members.api.MemberCreatedEvent
@@ -23,7 +21,6 @@ class Account {
     @AggregateIdentifier
     lateinit var memberId: String
     lateinit var balance: BigDecimal
-    lateinit var amount: BigDecimal
 
     constructor()
 
@@ -46,7 +43,7 @@ class Account {
             throw IllegalAmountException()
 
         with(command) {
-            AggregateLifecycle.apply(AssetAddedEvent(memberId, amount))
+            AggregateLifecycle.apply(AssetAddedEvent(memberId, balance.add(amount), amount))
         }
     }
 
@@ -57,7 +54,29 @@ class Account {
             throw IllegalAmountException()
 
         with(command) {
-            AggregateLifecycle.apply(LiabilityAddedEvent(memberId, amount))
+            AggregateLifecycle.apply(LiabilityAddedEvent(memberId, balance.subtract(amount, MathContext(2)), amount))
+        }
+    }
+
+    @CommandHandler
+    fun on(command: SavePaymentCommand) {
+        logger.debug("SavePaymentCommand handler: {}", command.toString())
+        if(command.amount.compareTo(BigDecimal.ZERO) < 0)
+            throw IllegalAmountException()
+
+        with(command) {
+            AggregateLifecycle.apply(PaymentAddedEvent(memberId, balance.add(amount), amount))
+        }
+    }
+
+    @CommandHandler
+    fun on(command: SaveWithdrawalCommand) {
+        logger.debug("SaveWithdrawalCommand handler: {}", command.toString())
+        if(command.amount.compareTo(BigDecimal.ZERO) < 0)
+            throw IllegalAmountException()
+
+        with(command) {
+            AggregateLifecycle.apply(WithdrawalAddedEvent(memberId, balance.subtract(amount, MathContext(2)), amount))
         }
     }
 
@@ -77,13 +96,25 @@ class Account {
     @EventSourcingHandler
     fun handle(event: AssetAddedEvent) {
         logger.debug("AccountOpenedEvent handler: {}", event.toString())
-        balance = balance.add(event.amount)
+        balance = event.balance
     }
 
     @EventSourcingHandler
     fun handle(event: LiabilityAddedEvent) {
         logger.debug("LiabilityAddedEvent handler: {}", event.toString())
-        balance = balance.subtract(event.amount, MathContext(2))
+        balance = event.balance
+    }
+
+    @EventSourcingHandler
+    fun handle(event: PaymentAddedEvent) {
+        logger.debug("PaymentAddedEvent handler: {}", event.toString())
+        balance = event.balance
+    }
+
+    @EventSourcingHandler
+    fun handle(event: WithdrawalAddedEvent) {
+        logger.debug("WithdrawalAddedEvent handler: {}", event.toString())
+        balance = event.balance
     }
 
     companion object : KLogging()

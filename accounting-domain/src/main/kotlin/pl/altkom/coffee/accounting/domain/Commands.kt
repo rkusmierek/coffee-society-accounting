@@ -22,3 +22,15 @@ data class SaveLiabilityCommand(
         val memberId: String,
         val amount: BigDecimal
 )
+
+data class SavePaymentCommand(
+        @TargetAggregateIdentifier
+        val memberId: String,
+        val amount: BigDecimal
+)
+
+data class SaveWithdrawalCommand(
+        @TargetAggregateIdentifier
+        val memberId: String,
+        val amount: BigDecimal
+)

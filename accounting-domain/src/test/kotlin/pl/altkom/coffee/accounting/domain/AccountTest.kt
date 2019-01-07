@@ -8,12 +8,11 @@ import org.jetbrains.spek.api.dsl.describe
 import org.jetbrains.spek.api.dsl.it
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito
-import pl.altkom.coffee.accounting.api.AccountOpenedEvent
-import pl.altkom.coffee.accounting.api.AssetAddedEvent
-import pl.altkom.coffee.accounting.api.LiabilityAddedEvent
+import pl.altkom.coffee.accounting.api.*
 import pl.altkom.coffee.accounting.query.AccountByMemberIdQuery
 import pl.altkom.coffee.accounting.query.AccountEntry
 import java.math.BigDecimal
+import java.math.MathContext
 import java.util.*
 import java.util.concurrent.CompletableFuture
 import kotlin.test.assertEquals
@@ -67,14 +66,14 @@ class AccountTest : Spek({
                     .givenCommands(OpenAccountCommand(memberId))
                     .`when`(SaveAssetCommand(memberId, amount))
                     .expectSuccessfulHandlerExecution()
-                    .expectEvents(AssetAddedEvent(memberId, amount))
+                    .expectEvents(AssetAddedEvent(memberId, amount, amount))
                     .expectState {
                         assertEquals(memberId, it.memberId)
                         assertEquals(amount, it.balance)
                     }
         }
 
-        it("Should throw IllegalAmountException if amount < 0") {
+        it("Should throw IllegalAmountException if asset amount < 0") {
 
             val amount = BigDecimal.valueOf(-10.00)
 
@@ -103,14 +102,86 @@ class AccountTest : Spek({
                     .givenCommands(OpenAccountCommand(memberId))
                     .`when`(SaveLiabilityCommand(memberId, amount))
                     .expectSuccessfulHandlerExecution()
-                    .expectEvents(LiabilityAddedEvent(memberId, amount))
+                    .expectEvents(LiabilityAddedEvent(memberId, amount.negate(MathContext(2)), amount))
                     .expectState {
                         assertEquals(memberId, it.memberId)
                         assertEquals(BigDecimal(10.00).negate(), it.balance)
                     }
         }
 
-        it("Should throw IllegalAmountException if amount < 0") {
+        it("Should throw IllegalAmountException if liability amount < 0") {
+
+            val amount = BigDecimal.valueOf(-10.00)
+
+            fixture
+                    .givenCommands(OpenAccountCommand(memberId))
+                    .`when`(SaveLiabilityCommand(memberId, amount))
+                    .expectException(IllegalAmountException::class.java)
+        }
+    }
+
+    describe("Save payment") {
+
+        val fixture = AggregateTestFixture(Account::class.java)
+        val queryGateway = Mockito.mock(QueryGateway::class.java)
+        val memberId = UUID.randomUUID().toString()
+        fixture.registerInjectableResource(queryGateway)
+
+        Mockito.`when`(queryGateway.query(any(AccountByMemberIdQuery::class.java), any(InstanceResponseType::class.java)))
+                .thenReturn(CompletableFuture.completedFuture(null))
+
+        it("Should save new payment") {
+
+            val amount = BigDecimal.valueOf(10.00)
+
+            fixture
+                    .givenCommands(OpenAccountCommand(memberId))
+                    .`when`(SavePaymentCommand(memberId, amount))
+                    .expectSuccessfulHandlerExecution()
+                    .expectEvents(PaymentAddedEvent(memberId, amount, amount))
+                    .expectState {
+                        assertEquals(memberId, it.memberId)
+                        assertEquals(amount, it.balance)
+                    }
+        }
+
+        it("Should throw IllegalAmountException if payment amount < 0") {
+
+            val amount = BigDecimal.valueOf(-10.00)
+
+            fixture
+                    .givenCommands(OpenAccountCommand(memberId))
+                    .`when`(SavePaymentCommand(memberId, amount))
+                    .expectException(IllegalAmountException::class.java)
+        }
+    }
+
+    describe("Save withdrawal") {
+
+        val fixture = AggregateTestFixture(Account::class.java)
+        val queryGateway = Mockito.mock(QueryGateway::class.java)
+        val memberId = UUID.randomUUID().toString()
+        fixture.registerInjectableResource(queryGateway)
+
+        Mockito.`when`(queryGateway.query(any(AccountByMemberIdQuery::class.java), any(InstanceResponseType::class.java)))
+                .thenReturn(CompletableFuture.completedFuture(null))
+
+        it("Should save new withdrawal") {
+
+            val amount = BigDecimal.valueOf(10.00)
+
+            fixture
+                    .givenCommands(OpenAccountCommand(memberId))
+                    .`when`(SaveWithdrawalCommand(memberId, amount))
+                    .expectSuccessfulHandlerExecution()
+                    .expectEvents(WithdrawalAddedEvent(memberId, amount.negate(MathContext(2)), amount))
+                    .expectState {
+                        assertEquals(memberId, it.memberId)
+                        assertEquals(BigDecimal(10.00).negate(), it.balance)
+                    }
+        }
+
+        it("Should throw IllegalAmountException if withdrawal amount < 0") {
 
             val amount = BigDecimal.valueOf(-10.00)
 

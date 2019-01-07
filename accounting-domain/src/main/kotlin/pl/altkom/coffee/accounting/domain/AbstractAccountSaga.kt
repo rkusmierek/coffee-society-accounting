@@ -7,9 +7,9 @@ import java.io.Serializable
 
 abstract class AbstractAccountSaga : Serializable {
 
+    @Autowired
     @Transient
     lateinit var commandGateway: CommandGateway
-        @Autowired set
 
     companion object : KLogging()
 }

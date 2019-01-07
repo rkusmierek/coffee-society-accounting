@@ -24,7 +24,7 @@ security:
     resource:
       id: accounting-rest-api
       jwt:
-        key-value: secretKey
+        key-value: signingKey
 
 #axon:
 #  eventhandling:
