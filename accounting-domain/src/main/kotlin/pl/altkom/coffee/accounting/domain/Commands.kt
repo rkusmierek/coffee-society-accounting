@@ -10,3 +10,15 @@ data class OpenAccountCommand(
 ) {
     constructor(memberId: String) : this(memberId, BigDecimal.ZERO)
 }
+
+data class SaveAssetCommand(
+        @TargetAggregateIdentifier
+        val memberId: String,
+        val amount: BigDecimal
+)
+
+data class SaveLiabilityCommand(
+        @TargetAggregateIdentifier
+        val memberId: String,
+        val amount: BigDecimal
+)

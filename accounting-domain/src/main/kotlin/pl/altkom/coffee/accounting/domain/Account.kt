@@ -9,10 +9,13 @@ import org.axonframework.modelling.command.AggregateLifecycle
 import org.axonframework.queryhandling.QueryGateway
 import org.axonframework.spring.stereotype.Aggregate
 import pl.altkom.coffee.accounting.api.AccountOpenedEvent
+import pl.altkom.coffee.accounting.api.AssetAddedEvent
+import pl.altkom.coffee.accounting.api.LiabilityAddedEvent
 import pl.altkom.coffee.accounting.query.AccountByMemberIdQuery
 import pl.altkom.coffee.accounting.query.AccountEntry
 import pl.altkom.coffee.members.api.MemberCreatedEvent
 import java.math.BigDecimal
+import java.math.MathContext
 
 @Aggregate
 class Account {
@@ -20,6 +23,7 @@ class Account {
     @AggregateIdentifier
     lateinit var memberId: String
     lateinit var balance: BigDecimal
+    lateinit var amount: BigDecimal
 
     constructor()
 
@@ -35,6 +39,28 @@ class Account {
         }
     }
 
+    @CommandHandler
+    fun on(command: SaveAssetCommand) {
+        logger.debug("SaveAssetCommand handler: {}", command.toString())
+        if(command.amount.compareTo(BigDecimal.ZERO) < 0)
+            throw IllegalAmountException()
+
+        with(command) {
+            AggregateLifecycle.apply(AssetAddedEvent(memberId, amount))
+        }
+    }
+
+    @CommandHandler
+    fun on(command: SaveLiabilityCommand) {
+        logger.debug("SaveLiabilityCommand handler: {}", command.toString())
+        if(command.amount.compareTo(BigDecimal.ZERO) < 0)
+            throw IllegalAmountException()
+
+        with(command) {
+            AggregateLifecycle.apply(LiabilityAddedEvent(memberId, amount))
+        }
+    }
+
     @EventSourcingHandler
     fun handle(event: MemberCreatedEvent) {
         logger.debug("MemberCreatedEvent handler: {}", event.toString())
@@ -46,6 +72,18 @@ class Account {
         logger.debug("AccountOpenedEvent handler: {}", event.toString())
         balance = event.balance
         memberId = event.memberId
+    }
+
+    @EventSourcingHandler
+    fun handle(event: AssetAddedEvent) {
+        logger.debug("AccountOpenedEvent handler: {}", event.toString())
+        balance = balance.add(event.amount)
+    }
+
+    @EventSourcingHandler
+    fun handle(event: LiabilityAddedEvent) {
+        logger.debug("LiabilityAddedEvent handler: {}", event.toString())
+        balance = balance.subtract(event.amount, MathContext(2))
     }
 
     companion object : KLogging()
