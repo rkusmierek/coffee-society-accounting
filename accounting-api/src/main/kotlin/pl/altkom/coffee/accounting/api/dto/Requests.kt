@@ -1,9 +1,7 @@
 package pl.altkom.coffee.accounting.api.dto
 
-data class PaymentRequest(
-        val memberId: String, val amount: String
-)
+import java.math.BigDecimal
 
-data class WithdrawalRequest(
-        val memberId: String, val amount: String
-)
+data class PaymentRequest(val memberId: String, val amount: BigDecimal)
+
+data class WithdrawalRequest(val memberId: String, val amount: BigDecimal)

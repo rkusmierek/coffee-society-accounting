@@ -9,12 +9,14 @@ data class AccountOpenedEvent(
 
 data class AssetAddedEvent(
         val memberId: String,
+        val transferId: TransferId,
         val balance: BigDecimal,
         val amount: BigDecimal
 )
 
 data class LiabilityAddedEvent(
         val memberId: String,
+        val transferId: TransferId,
         val balance: BigDecimal,
         val amount: BigDecimal
 )
@@ -28,5 +30,12 @@ data class PaymentAddedEvent(
 data class WithdrawalAddedEvent(
         val memberId: String,
         val balance: BigDecimal,
+        val amount: BigDecimal
+)
+
+data class TransferRegisteredEvent(
+        val transferId: TransferId,
+        val fromMemberId: String,
+        val toMemberId: String,
         val amount: BigDecimal
 )

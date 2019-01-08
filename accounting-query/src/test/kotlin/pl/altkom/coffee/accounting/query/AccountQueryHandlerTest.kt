@@ -6,6 +6,7 @@ import org.jetbrains.spek.api.dsl.it
 import org.junit.Assert
 import org.mockito.ArgumentMatchers
 import org.mockito.Mockito
+import java.math.BigDecimal
 import java.util.*
 
 class AccountQueryHandlerTest : Spek({
@@ -17,16 +18,16 @@ class AccountQueryHandlerTest : Spek({
 
         it("Should find account entry by memberId") {
             Mockito.`when`(repository.findByMemberId(ArgumentMatchers.anyString()))
-                    .thenReturn(AccountEntry(memberId))
+                    .thenReturn(AccountEntry(memberId, BigDecimal.ZERO))
 
-            Assert.assertEquals(memberId, handler.getAccountByMemberId(AccountByMemberIdQuery(memberId))!!.memberId)
+            Assert.assertTrue(handler.checkIfAccountExistsByMemberId(AccountExistsForMemberIdQuery(memberId)))
         }
 
         it("Should not find account entry by memberId") {
             Mockito.`when`(repository.findByMemberId(ArgumentMatchers.anyString()))
                     .thenReturn(null)
 
-            Assert.assertNull(handler.getAccountByMemberId(AccountByMemberIdQuery(memberId)))
+            Assert.assertFalse(handler.checkIfAccountExistsByMemberId(AccountExistsForMemberIdQuery(memberId)))
         }
     }
 })

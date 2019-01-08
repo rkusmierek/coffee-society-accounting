@@ -9,9 +9,7 @@ import org.axonframework.modelling.command.AggregateLifecycle
 import org.axonframework.queryhandling.QueryGateway
 import org.axonframework.spring.stereotype.Aggregate
 import pl.altkom.coffee.accounting.api.*
-import pl.altkom.coffee.accounting.query.AccountByMemberIdQuery
-import pl.altkom.coffee.accounting.query.AccountEntry
-import pl.altkom.coffee.members.api.MemberCreatedEvent
+import pl.altkom.coffee.accounting.query.AccountExistsForMemberIdQuery
 import java.math.BigDecimal
 import java.math.MathContext
 
@@ -22,46 +20,49 @@ class Account {
     lateinit var memberId: String
     lateinit var balance: BigDecimal
 
+    companion object : KLogging()
+
     constructor()
 
     @CommandHandler
     constructor(command: OpenAccountCommand, queryGateway: QueryGateway) {
-        logger.debug("OpenAccountCommand handler: {}", command.toString())
+        logger.debug("OpenAccountCommand handler: $command")
+
         with(command) {
-            if(queryGateway.query(AccountByMemberIdQuery(memberId), InstanceResponseType(AccountEntry::class.java)).get() == null) {
-                AggregateLifecycle.apply(AccountOpenedEvent(memberId, balance))
-            } else {
+            if(queryGateway.query(AccountExistsForMemberIdQuery(memberId), InstanceResponseType(Boolean::class.java)).get()) {
                 throw MemberAlreadyHasAccountException()
+            } else {
+                AggregateLifecycle.apply(AccountOpenedEvent(memberId, balance))
             }
         }
     }
 
     @CommandHandler
     fun on(command: SaveAssetCommand) {
-        logger.debug("SaveAssetCommand handler: {}", command.toString())
-        if(command.amount.compareTo(BigDecimal.ZERO) < 0)
+        logger.debug("SaveAssetCommand handler: $command")
+        if(command.amount < BigDecimal.ZERO)
             throw IllegalAmountException()
 
         with(command) {
-            AggregateLifecycle.apply(AssetAddedEvent(memberId, balance.add(amount), amount))
+            AggregateLifecycle.apply(AssetAddedEvent(memberId, transferId, balance.add(amount), amount))
         }
     }
 
     @CommandHandler
     fun on(command: SaveLiabilityCommand) {
-        logger.debug("SaveLiabilityCommand handler: {}", command.toString())
-        if(command.amount.compareTo(BigDecimal.ZERO) < 0)
+        logger.debug("SaveLiabilityCommand handler: $command")
+        if(command.amount < BigDecimal.ZERO)
             throw IllegalAmountException()
 
         with(command) {
-            AggregateLifecycle.apply(LiabilityAddedEvent(memberId, balance.subtract(amount, MathContext(2)), amount))
+            AggregateLifecycle.apply(LiabilityAddedEvent(memberId, transferId, balance.subtract(amount, MathContext(2)), amount))
         }
     }
 
     @CommandHandler
     fun on(command: SavePaymentCommand) {
-        logger.debug("SavePaymentCommand handler: {}", command.toString())
-        if(command.amount.compareTo(BigDecimal.ZERO) < 0)
+        logger.debug("SavePaymentCommand handler: $command")
+        if(command.amount < BigDecimal.ZERO)
             throw IllegalAmountException()
 
         with(command) {
@@ -71,8 +72,8 @@ class Account {
 
     @CommandHandler
     fun on(command: SaveWithdrawalCommand) {
-        logger.debug("SaveWithdrawalCommand handler: {}", command.toString())
-        if(command.amount.compareTo(BigDecimal.ZERO) < 0)
+        logger.debug("SaveWithdrawalCommand handler: $command")
+        if(command.amount < BigDecimal.ZERO)
             throw IllegalAmountException()
 
         with(command) {
@@ -81,41 +82,33 @@ class Account {
     }
 
     @EventSourcingHandler
-    fun handle(event: MemberCreatedEvent) {
-        logger.debug("MemberCreatedEvent handler: {}", event.toString())
-        memberId = event.memberId
-    }
-
-    @EventSourcingHandler
     fun handle(event: AccountOpenedEvent) {
-        logger.debug("AccountOpenedEvent handler: {}", event.toString())
+        logger.debug("AccountOpenedEvent handler: $event")
         balance = event.balance
         memberId = event.memberId
     }
 
     @EventSourcingHandler
     fun handle(event: AssetAddedEvent) {
-        logger.debug("AccountOpenedEvent handler: {}", event.toString())
+        logger.debug("AccountOpenedEvent handler: $event")
         balance = event.balance
     }
 
     @EventSourcingHandler
     fun handle(event: LiabilityAddedEvent) {
-        logger.debug("LiabilityAddedEvent handler: {}", event.toString())
+        logger.debug("LiabilityAddedEvent handler: $event")
         balance = event.balance
     }
 
     @EventSourcingHandler
     fun handle(event: PaymentAddedEvent) {
-        logger.debug("PaymentAddedEvent handler: {}", event.toString())
+        logger.debug("PaymentAddedEvent handler: $event")
         balance = event.balance
     }
 
     @EventSourcingHandler
     fun handle(event: WithdrawalAddedEvent) {
-        logger.debug("WithdrawalAddedEvent handler: {}", event.toString())
+        logger.debug("WithdrawalAddedEvent handler: $event")
         balance = event.balance
     }
-
-    companion object : KLogging()
 }

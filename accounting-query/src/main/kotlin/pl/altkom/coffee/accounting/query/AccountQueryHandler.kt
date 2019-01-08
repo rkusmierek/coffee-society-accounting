@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component
 class AccountQueryHandler(private val repository: AccountEntryRepository) {
 
     @QueryHandler
-    fun getAccountByMemberId(query: AccountByMemberIdQuery) : AccountEntry? {
-        return repository.findByMemberId(query.memberId)
+    fun checkIfAccountExistsByMemberId(query: AccountExistsForMemberIdQuery) : Boolean {
+        return repository.findByMemberId(query.memberId) != null
     }
 }

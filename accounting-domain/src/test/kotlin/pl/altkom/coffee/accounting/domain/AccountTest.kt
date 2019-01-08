@@ -9,7 +9,7 @@ import org.jetbrains.spek.api.dsl.it
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito
 import pl.altkom.coffee.accounting.api.*
-import pl.altkom.coffee.accounting.query.AccountByMemberIdQuery
+import pl.altkom.coffee.accounting.query.AccountExistsForMemberIdQuery
 import pl.altkom.coffee.accounting.query.AccountEntry
 import java.math.BigDecimal
 import java.math.MathContext
@@ -25,9 +25,9 @@ class AccountTest : Spek({
         val memberId = UUID.randomUUID().toString()
         fixture.registerInjectableResource(queryGateway)
 
+        whenAccountExistsMock(queryGateway, false)
+
         it("Should create new Account") {
-            Mockito.`when`(queryGateway.query(any(AccountByMemberIdQuery::class.java), any(InstanceResponseType::class.java)))
-                    .thenReturn(CompletableFuture.completedFuture(null))
             fixture
                     .`when`(OpenAccountCommand(memberId))
                     .expectSuccessfulHandlerExecution()
@@ -39,8 +39,7 @@ class AccountTest : Spek({
         }
 
         it("Should throw MemberAlreadyHasAccountException if account exist") {
-            Mockito.`when`(queryGateway.query(any(AccountByMemberIdQuery::class.java), any(InstanceResponseType::class.java)))
-                    .thenReturn(CompletableFuture.completedFuture(AccountEntry(memberId)))
+            whenAccountExistsMock(queryGateway, true)
 
             fixture
                     .`when`(OpenAccountCommand(memberId))
@@ -53,20 +52,20 @@ class AccountTest : Spek({
         val fixture = AggregateTestFixture(Account::class.java)
         val queryGateway = Mockito.mock(QueryGateway::class.java)
         val memberId = UUID.randomUUID().toString()
+        val transferId = TransferId("123")
         fixture.registerInjectableResource(queryGateway)
 
-        Mockito.`when`(queryGateway.query(any(AccountByMemberIdQuery::class.java), any(InstanceResponseType::class.java)))
-                .thenReturn(CompletableFuture.completedFuture(null))
+        whenAccountExistsMock(queryGateway, false)
 
         it("Should save new asset") {
 
-            val amount = BigDecimal.valueOf(10.00)
+            val amount = BigDecimal("10.00")
 
             fixture
                     .givenCommands(OpenAccountCommand(memberId))
-                    .`when`(SaveAssetCommand(memberId, amount))
+                    .`when`(SaveAssetCommand(memberId, transferId, amount))
                     .expectSuccessfulHandlerExecution()
-                    .expectEvents(AssetAddedEvent(memberId, amount, amount))
+                    .expectEvents(AssetAddedEvent(memberId, transferId, amount, amount))
                     .expectState {
                         assertEquals(memberId, it.memberId)
                         assertEquals(amount, it.balance)
@@ -75,11 +74,11 @@ class AccountTest : Spek({
 
         it("Should throw IllegalAmountException if asset amount < 0") {
 
-            val amount = BigDecimal.valueOf(-10.00)
+            val amount = BigDecimal("-10.00")
 
             fixture
                     .givenCommands(OpenAccountCommand(memberId))
-                    .`when`(SaveAssetCommand(memberId, amount))
+                    .`when`(SaveAssetCommand(memberId, transferId, amount))
                     .expectException(IllegalAmountException::class.java)
         }
     }
@@ -89,33 +88,33 @@ class AccountTest : Spek({
         val fixture = AggregateTestFixture(Account::class.java)
         val queryGateway = Mockito.mock(QueryGateway::class.java)
         val memberId = UUID.randomUUID().toString()
+        val transferId = TransferId("123")
         fixture.registerInjectableResource(queryGateway)
 
-        Mockito.`when`(queryGateway.query(any(AccountByMemberIdQuery::class.java), any(InstanceResponseType::class.java)))
-                .thenReturn(CompletableFuture.completedFuture(null))
+        whenAccountExistsMock(queryGateway, false)
 
         it("Should save new liability") {
 
-            val amount = BigDecimal.valueOf(10.00)
+            val amount = BigDecimal("10.00")
 
             fixture
                     .givenCommands(OpenAccountCommand(memberId))
-                    .`when`(SaveLiabilityCommand(memberId, amount))
+                    .`when`(SaveLiabilityCommand(memberId, transferId, amount))
                     .expectSuccessfulHandlerExecution()
-                    .expectEvents(LiabilityAddedEvent(memberId, amount.negate(MathContext(2)), amount))
+                    .expectEvents(LiabilityAddedEvent(memberId, transferId, amount.negate(MathContext(2)), amount))
                     .expectState {
                         assertEquals(memberId, it.memberId)
-                        assertEquals(BigDecimal(10.00).negate(), it.balance)
+                        assertEquals(BigDecimal("10.00").negate(MathContext(2)), it.balance)
                     }
         }
 
         it("Should throw IllegalAmountException if liability amount < 0") {
 
-            val amount = BigDecimal.valueOf(-10.00)
+            val amount = BigDecimal("-10.00")
 
             fixture
                     .givenCommands(OpenAccountCommand(memberId))
-                    .`when`(SaveLiabilityCommand(memberId, amount))
+                    .`when`(SaveLiabilityCommand(memberId, transferId, amount))
                     .expectException(IllegalAmountException::class.java)
         }
     }
@@ -127,15 +126,14 @@ class AccountTest : Spek({
         val memberId = UUID.randomUUID().toString()
         fixture.registerInjectableResource(queryGateway)
 
-        Mockito.`when`(queryGateway.query(any(AccountByMemberIdQuery::class.java), any(InstanceResponseType::class.java)))
-                .thenReturn(CompletableFuture.completedFuture(null))
+        whenAccountExistsMock(queryGateway, false)
 
         it("Should save new payment") {
 
-            val amount = BigDecimal.valueOf(10.00)
+            val amount = BigDecimal("10.00")
 
             fixture
-                    .givenCommands(OpenAccountCommand(memberId))
+                    .given(AccountOpenedEvent(memberId, BigDecimal.ZERO))
                     .`when`(SavePaymentCommand(memberId, amount))
                     .expectSuccessfulHandlerExecution()
                     .expectEvents(PaymentAddedEvent(memberId, amount, amount))
@@ -147,7 +145,7 @@ class AccountTest : Spek({
 
         it("Should throw IllegalAmountException if payment amount < 0") {
 
-            val amount = BigDecimal.valueOf(-10.00)
+            val amount = BigDecimal("-10.00")
 
             fixture
                     .givenCommands(OpenAccountCommand(memberId))
@@ -163,12 +161,11 @@ class AccountTest : Spek({
         val memberId = UUID.randomUUID().toString()
         fixture.registerInjectableResource(queryGateway)
 
-        Mockito.`when`(queryGateway.query(any(AccountByMemberIdQuery::class.java), any(InstanceResponseType::class.java)))
-                .thenReturn(CompletableFuture.completedFuture(null))
+        whenAccountExistsMock(queryGateway, false)
 
         it("Should save new withdrawal") {
 
-            val amount = BigDecimal.valueOf(10.00)
+            val amount = BigDecimal("10.00")
 
             fixture
                     .givenCommands(OpenAccountCommand(memberId))
@@ -177,18 +174,23 @@ class AccountTest : Spek({
                     .expectEvents(WithdrawalAddedEvent(memberId, amount.negate(MathContext(2)), amount))
                     .expectState {
                         assertEquals(memberId, it.memberId)
-                        assertEquals(BigDecimal(10.00).negate(), it.balance)
+                        assertEquals(BigDecimal("10.00").negate(MathContext(2)), it.balance)
                     }
         }
 
         it("Should throw IllegalAmountException if withdrawal amount < 0") {
 
-            val amount = BigDecimal.valueOf(-10.00)
+            val amount = BigDecimal("-10.00")
 
             fixture
                     .givenCommands(OpenAccountCommand(memberId))
-                    .`when`(SaveLiabilityCommand(memberId, amount))
+                    .`when`(SaveWithdrawalCommand(memberId, amount))
                     .expectException(IllegalAmountException::class.java)
         }
     }
 })
+
+private fun whenAccountExistsMock(queryGateway : QueryGateway, exists : Boolean) {
+    Mockito.`when`(queryGateway.query(any<AccountExistsForMemberIdQuery>(), any<InstanceResponseType<Boolean>>()))
+            .thenReturn(CompletableFuture.completedFuture(exists))
+}

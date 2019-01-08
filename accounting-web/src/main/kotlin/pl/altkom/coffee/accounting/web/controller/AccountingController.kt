@@ -22,13 +22,13 @@ class AccountingController(private val commandGateway: CommandGateway) {
     @PostMapping("/savePayment")
     fun savePayment(@RequestBody request: PaymentRequest) : Mono<Void> {
         return Mono.fromFuture(commandGateway.send<Void>(
-                SavePaymentCommand(request.memberId, BigDecimal(request.amount, MathContext(2)))))
+                SavePaymentCommand(request.memberId, request.amount)))
     }
 
     @PreAuthorize("hasAuthority('ACCOUNTANT')")
     @PostMapping("/saveWithdrawal")
     fun saveWithdrawal(@RequestBody request: WithdrawalRequest) : Mono<Void> {
         return Mono.fromFuture(commandGateway.send<Void>(
-                SaveWithdrawalCommand(request.memberId, BigDecimal(request.amount, MathContext(2)))))
+                SaveWithdrawalCommand(request.memberId, request.amount)))
     }
 }
