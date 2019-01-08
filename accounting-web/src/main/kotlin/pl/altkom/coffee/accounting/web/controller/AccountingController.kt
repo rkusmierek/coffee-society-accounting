@@ -2,6 +2,8 @@ package pl.altkom.coffee.accounting.web.controller
 
 import org.axonframework.commandhandling.gateway.CommandGateway
 import org.springframework.security.access.prepost.PreAuthorize
+import org.springframework.security.core.authority.SimpleGrantedAuthority
+import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
@@ -11,10 +13,9 @@ import pl.altkom.coffee.accounting.api.OperationId
 import pl.altkom.coffee.accounting.api.dto.PaymentRequest
 import pl.altkom.coffee.accounting.api.dto.TransferMoneyRequest
 import pl.altkom.coffee.accounting.api.dto.WithdrawalRequest
-import pl.altkom.coffee.accounting.domain.SavePaymentCommand
-import pl.altkom.coffee.accounting.domain.SaveWithdrawalCommand
-import pl.altkom.coffee.accounting.domain.TransferMoneyCommand
+import pl.altkom.coffee.accounting.domain.*
 import reactor.core.publisher.Mono
+import java.util.*
 
 @RestController
 @RequestMapping("/api/accounting")
@@ -34,11 +35,14 @@ class AccountingController(private val commandGateway: CommandGateway) {
                 SaveWithdrawalCommand(request.memberId, Money(request.amount))))
     }
 
-    @PreAuthorize("hasAuthority('ACCOUNTANT')")
+    @PreAuthorize("hasAnyAuthority('ACCOUNTANT', 'MEMBER')")
     @PostMapping("/transferMoney")
     fun transferMoney(@RequestBody request: TransferMoneyRequest) : Mono<Void> {
-        return Mono.fromFuture(commandGateway.send<Void>(
-                TransferMoneyCommand(OperationId(request.operationId, TRANSFER), request.fromMemberId, request.toMemberId, Money(request.amount))))
+        if(SecurityContextHolder.getContext().authentication.authorities.contains(SimpleGrantedAuthority("ACCOUNTANT")) || request.fromMemberId == request.memberId)
+            return Mono.fromFuture(commandGateway.send<Void>(
+                    TransferMoneyCommand(OperationId(UUID.randomUUID().toString(), TRANSFER), request.fromMemberId, request.toMemberId, Money(request.amount))))
+        else
+            throw UserHasNoAuthorityToTransferException()
     }
 
     companion object {

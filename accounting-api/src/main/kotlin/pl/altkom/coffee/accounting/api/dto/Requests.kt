@@ -6,4 +6,4 @@ data class PaymentRequest(val memberId: String, val amount: BigDecimal)
 
 data class WithdrawalRequest(val memberId: String, val amount: BigDecimal)
 
-data class TransferMoneyRequest(val operationId: String, val fromMemberId: String, val toMemberId: String, val amount: BigDecimal)
+data class TransferMoneyRequest(val memberId: String, val fromMemberId: String, val toMemberId: String, val amount: BigDecimal)
