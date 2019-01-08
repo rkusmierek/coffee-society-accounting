@@ -11,14 +11,13 @@ import org.axonframework.spring.stereotype.Aggregate
 import pl.altkom.coffee.accounting.api.*
 import pl.altkom.coffee.accounting.query.AccountExistsForMemberIdQuery
 import java.math.BigDecimal
-import java.math.MathContext
 
 @Aggregate
 class Account {
 
     @AggregateIdentifier
     lateinit var memberId: String
-    lateinit var balance: BigDecimal
+    lateinit var balance: BigDecimalWrapper
 
     companion object : KLogging()
 
@@ -40,7 +39,7 @@ class Account {
     @CommandHandler
     fun on(command: SaveAssetCommand) {
         logger.debug("SaveAssetCommand handler: $command")
-        if(command.amount < BigDecimal.ZERO)
+        if(command.amount.value < BigDecimal.ZERO)
             throw IllegalAmountException()
 
         with(command) {
@@ -51,18 +50,19 @@ class Account {
     @CommandHandler
     fun on(command: SaveLiabilityCommand) {
         logger.debug("SaveLiabilityCommand handler: $command")
-        if(command.amount < BigDecimal.ZERO)
+        if(command.amount.value < BigDecimal.ZERO)
             throw IllegalAmountException()
 
         with(command) {
-            AggregateLifecycle.apply(LiabilityAddedEvent(memberId, transferId, balance.subtract(amount, MathContext(2)), amount))
+            BigDecimalWrapper(BigDecimal("10.00")).add(amount)
+            AggregateLifecycle.apply(LiabilityAddedEvent(memberId, transferId, balance.subtract(amount), amount))
         }
     }
 
     @CommandHandler
     fun on(command: SavePaymentCommand) {
         logger.debug("SavePaymentCommand handler: $command")
-        if(command.amount < BigDecimal.ZERO)
+        if(command.amount.value < BigDecimal.ZERO)
             throw IllegalAmountException()
 
         with(command) {
@@ -73,11 +73,11 @@ class Account {
     @CommandHandler
     fun on(command: SaveWithdrawalCommand) {
         logger.debug("SaveWithdrawalCommand handler: $command")
-        if(command.amount < BigDecimal.ZERO)
+        if(command.amount.value < BigDecimal.ZERO)
             throw IllegalAmountException()
 
         with(command) {
-            AggregateLifecycle.apply(WithdrawalAddedEvent(memberId, balance.subtract(amount, MathContext(2)), amount))
+            AggregateLifecycle.apply(WithdrawalAddedEvent(memberId, balance.subtract(amount), amount))
         }
     }
 

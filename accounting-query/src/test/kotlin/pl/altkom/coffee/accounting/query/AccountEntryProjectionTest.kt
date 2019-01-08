@@ -22,40 +22,40 @@ class AccountEntryProjectionTest : Spek({
             val entry = AccountEntry(memberId, BigDecimal.ZERO)
             Mockito.`when`(repository.findByMemberId(ArgumentMatchers.anyString())).thenReturn(entry)
 
-            val expected = BigDecimal(10.00)
+            val expected = BigDecimalWrapper("10.00")
 
             handler.on(AssetAddedEvent(memberId, transferId, expected, expected))
 
-            Assert.assertEquals(expected, entry.balance)
+            Assert.assertEquals(BigDecimal("10.00"), entry.balance)
         }
 
         it("Should subtract liability to entry balance") {
-            val entry = AccountEntry(memberId, BigDecimal(25.00))
+            val entry = AccountEntry(memberId, BigDecimal("25.00"))
             Mockito.`when`(repository.findByMemberId(ArgumentMatchers.anyString())).thenReturn(entry)
 
-            handler.on(LiabilityAddedEvent(memberId, transferId, BigDecimal(15.00), BigDecimal(10.00)))
+            handler.on(LiabilityAddedEvent(memberId, transferId, BigDecimalWrapper("15.00"), BigDecimalWrapper("10.00")))
 
-            Assert.assertEquals(BigDecimal(15.00), entry.balance)
+            Assert.assertEquals(BigDecimal("15.00"), entry.balance)
         }
 
         it("Should add payment to entry balance") {
             val entry = AccountEntry(memberId, BigDecimal.ZERO)
             Mockito.`when`(repository.findByMemberId(ArgumentMatchers.anyString())).thenReturn(entry)
 
-            val expected = BigDecimal(10.00)
+            val expected = BigDecimalWrapper("10.00")
 
             handler.on(PaymentAddedEvent(memberId, expected, expected))
 
-            Assert.assertEquals(expected, entry.balance)
+            Assert.assertEquals(BigDecimal("10.00"), entry.balance)
         }
 
         it("Should subtract withdrawal to entry balance") {
-            val entry = AccountEntry(memberId, BigDecimal(25.00))
+            val entry = AccountEntry(memberId, BigDecimal("25.00"))
             Mockito.`when`(repository.findByMemberId(ArgumentMatchers.anyString())).thenReturn(entry)
 
-            handler.on(WithdrawalAddedEvent(memberId, BigDecimal(15.00), BigDecimal(10.00)))
+            handler.on(WithdrawalAddedEvent(memberId, BigDecimalWrapper("15.00"), BigDecimalWrapper("10.00")))
 
-            Assert.assertEquals(BigDecimal(15.00), entry.balance)
+            Assert.assertEquals(BigDecimal("15.00"), entry.balance)
         }
     }
 })

@@ -16,28 +16,28 @@ class AccountEntryProjection(private val repository: AccountEntryRepository) {
     @EventHandler
     fun on(event: AssetAddedEvent) {
         with(event) {
-            updateAccountEntry(memberId, balance)
+            updateAccountEntry(memberId, balance.value)
         }
     }
 
     @EventHandler
     fun on(event: LiabilityAddedEvent) {
         with(event) {
-            updateAccountEntry(memberId, balance)
+            updateAccountEntry(memberId, balance.value)
         }
     }
 
     @EventHandler
     fun on(event: PaymentAddedEvent) {
         with(event) {
-            updateAccountEntry(memberId, balance)
+            updateAccountEntry(memberId, balance.value)
         }
     }
 
     @EventHandler
     fun on(event: WithdrawalAddedEvent) {
         with(event) {
-            updateAccountEntry(memberId, balance)
+            updateAccountEntry(memberId, balance.value)
         }
     }
 
