@@ -9,7 +9,7 @@ import org.axonframework.modelling.command.AggregateLifecycle
 import org.axonframework.queryhandling.QueryGateway
 import org.axonframework.spring.stereotype.Aggregate
 import pl.altkom.coffee.accounting.api.*
-import pl.altkom.coffee.accounting.query.AccountExistsForMemberIdQuery
+import pl.altkom.coffee.accounting.api.dto.AccountExistsForMemberIdQuery
 import java.math.BigDecimal
 
 @Aggregate
@@ -17,7 +17,7 @@ class Account {
 
     @AggregateIdentifier
     lateinit var memberId: String
-    lateinit var balance: BigDecimalWrapper
+    lateinit var balance: Money
 
     companion object : KLogging()
 
@@ -43,7 +43,7 @@ class Account {
             throw IllegalAmountException()
 
         with(command) {
-            AggregateLifecycle.apply(AssetAddedEvent(memberId, transferId, balance.add(amount), amount))
+            AggregateLifecycle.apply(AssetAddedEvent(memberId, operationId, balance.add(amount), amount))
         }
     }
 
@@ -54,8 +54,8 @@ class Account {
             throw IllegalAmountException()
 
         with(command) {
-            BigDecimalWrapper(BigDecimal("10.00")).add(amount)
-            AggregateLifecycle.apply(LiabilityAddedEvent(memberId, transferId, balance.subtract(amount), amount))
+            Money(BigDecimal("10.00")).add(amount)
+            AggregateLifecycle.apply(LiabilityAddedEvent(memberId, operationId, balance.subtract(amount), amount))
         }
     }
 

@@ -6,8 +6,8 @@ import org.axonframework.eventsourcing.EventSourcingHandler
 import org.axonframework.modelling.command.AggregateIdentifier
 import org.axonframework.modelling.command.AggregateLifecycle
 import org.axonframework.spring.stereotype.Aggregate
-import pl.altkom.coffee.accounting.api.BigDecimalWrapper
-import pl.altkom.coffee.accounting.api.TransferId
+import pl.altkom.coffee.accounting.api.Money
+import pl.altkom.coffee.accounting.api.OperationId
 import pl.altkom.coffee.accounting.api.TransferRegisteredEvent
 import java.math.BigDecimal
 
@@ -15,10 +15,10 @@ import java.math.BigDecimal
 class Transfer {
 
     @AggregateIdentifier
-    lateinit var transferId: TransferId
+    lateinit var operationId: OperationId
     lateinit var fromMemberId: String
     lateinit var toMemberId: String
-    lateinit var amount: BigDecimalWrapper
+    lateinit var amount: Money
 
     companion object : KLogging()
 
@@ -27,18 +27,18 @@ class Transfer {
     @CommandHandler
     constructor(command: TransferMoneyCommand) {
         logger.debug("TransferMoneyCommand handler: {}", command.toString())
-        if(command.amount.value.compareTo(BigDecimal.ZERO) < 0)
+        if(command.amount.value < BigDecimal.ZERO)
             throw IllegalAmountException()
 
         with(command) {
-            AggregateLifecycle.apply(TransferRegisteredEvent(transferId, fromMemberId, toMemberId, amount))
+            AggregateLifecycle.apply(TransferRegisteredEvent(operationId, fromMemberId, toMemberId, amount))
         }
     }
 
     @EventSourcingHandler
     fun handle(event: TransferRegisteredEvent) {
         logger.debug("MemberCreatedEvent handler: {}", event.toString())
-        transferId = event.transferId
+        operationId = event.operationId
         fromMemberId = event.fromMemberId
         toMemberId = event.toMemberId
         amount = event.amount

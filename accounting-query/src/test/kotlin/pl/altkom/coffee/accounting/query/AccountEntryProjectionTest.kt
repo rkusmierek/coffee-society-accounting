@@ -14,7 +14,7 @@ class AccountEntryProjectionTest : Spek({
     describe("Account entry projection tests") {
 
         val memberId = UUID.randomUUID().toString()
-        val transferId = TransferId("123")
+        val operationId = OperationId("123", "TRANSFER")
         val repository = Mockito.mock(AccountEntryRepository::class.java)
         var handler = AccountEntryProjection(repository)
 
@@ -22,9 +22,9 @@ class AccountEntryProjectionTest : Spek({
             val entry = AccountEntry(memberId, BigDecimal.ZERO)
             Mockito.`when`(repository.findByMemberId(ArgumentMatchers.anyString())).thenReturn(entry)
 
-            val expected = BigDecimalWrapper("10.00")
+            val expected = Money("10.00")
 
-            handler.on(AssetAddedEvent(memberId, transferId, expected, expected))
+            handler.on(AssetAddedEvent(memberId, operationId, expected, expected))
 
             Assert.assertEquals(BigDecimal("10.00"), entry.balance)
         }
@@ -33,7 +33,7 @@ class AccountEntryProjectionTest : Spek({
             val entry = AccountEntry(memberId, BigDecimal("25.00"))
             Mockito.`when`(repository.findByMemberId(ArgumentMatchers.anyString())).thenReturn(entry)
 
-            handler.on(LiabilityAddedEvent(memberId, transferId, BigDecimalWrapper("15.00"), BigDecimalWrapper("10.00")))
+            handler.on(LiabilityAddedEvent(memberId, operationId, Money("15.00"), Money("10.00")))
 
             Assert.assertEquals(BigDecimal("15.00"), entry.balance)
         }
@@ -42,7 +42,7 @@ class AccountEntryProjectionTest : Spek({
             val entry = AccountEntry(memberId, BigDecimal.ZERO)
             Mockito.`when`(repository.findByMemberId(ArgumentMatchers.anyString())).thenReturn(entry)
 
-            val expected = BigDecimalWrapper("10.00")
+            val expected = Money("10.00")
 
             handler.on(PaymentAddedEvent(memberId, expected, expected))
 
@@ -53,7 +53,7 @@ class AccountEntryProjectionTest : Spek({
             val entry = AccountEntry(memberId, BigDecimal("25.00"))
             Mockito.`when`(repository.findByMemberId(ArgumentMatchers.anyString())).thenReturn(entry)
 
-            handler.on(WithdrawalAddedEvent(memberId, BigDecimalWrapper("15.00"), BigDecimalWrapper("10.00")))
+            handler.on(WithdrawalAddedEvent(memberId, Money("15.00"), Money("10.00")))
 
             Assert.assertEquals(BigDecimal("15.00"), entry.balance)
         }

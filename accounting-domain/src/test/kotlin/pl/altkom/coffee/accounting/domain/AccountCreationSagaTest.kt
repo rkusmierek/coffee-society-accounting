@@ -5,7 +5,7 @@ import org.jetbrains.spek.api.Spek
 import org.jetbrains.spek.api.dsl.describe
 import org.jetbrains.spek.api.dsl.it
 import pl.altkom.coffee.accounting.api.AccountOpenedEvent
-import pl.altkom.coffee.accounting.api.BigDecimalWrapper
+import pl.altkom.coffee.accounting.api.Money
 import pl.altkom.coffee.members.api.MemberCreatedEvent
 import java.math.BigDecimal
 import java.util.*
@@ -26,7 +26,7 @@ class AccountCreationSagaTest : Spek({
         it("Should end account creation saga") {
             fixture
                     .givenAggregate(memberId).published()
-                    .whenAggregate(memberId).publishes(AccountOpenedEvent(memberId, BigDecimalWrapper(BigDecimal.ZERO)))
+                    .whenAggregate(memberId).publishes(AccountOpenedEvent(memberId, Money(BigDecimal.ZERO)))
                     .expectActiveSagas(0)
         }
     }

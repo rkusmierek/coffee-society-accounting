@@ -3,38 +3,38 @@ package pl.altkom.coffee.accounting.api
 
 data class AccountOpenedEvent(
         val memberId: String,
-        val balance: BigDecimalWrapper
+        val balance: Money
 )
 
 data class AssetAddedEvent(
         val memberId: String,
-        val transferId: TransferId,
-        val balance: BigDecimalWrapper,
-        val amount: BigDecimalWrapper
+        val operationId: OperationId,
+        val balance: Money,
+        val amount: Money
 )
 
 data class LiabilityAddedEvent(
         val memberId: String,
-        val transferId: TransferId,
-        val balance: BigDecimalWrapper,
-        val amount: BigDecimalWrapper
+        val operationId: OperationId,
+        val balance: Money,
+        val amount: Money
 )
 
 data class PaymentAddedEvent(
         val memberId: String,
-        val balance: BigDecimalWrapper,
-        val amount: BigDecimalWrapper
+        val balance: Money,
+        val amount: Money
 )
 
 data class WithdrawalAddedEvent(
         val memberId: String,
-        val balance: BigDecimalWrapper,
-        val amount: BigDecimalWrapper
+        val balance: Money,
+        val amount: Money
 )
 
 data class TransferRegisteredEvent(
-        val transferId: TransferId,
+        val operationId: OperationId,
         val fromMemberId: String,
         val toMemberId: String,
-        val amount: BigDecimalWrapper
+        val amount: Money
 )

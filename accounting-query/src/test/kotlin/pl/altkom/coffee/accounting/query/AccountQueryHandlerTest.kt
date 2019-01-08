@@ -6,6 +6,7 @@ import org.jetbrains.spek.api.dsl.it
 import org.junit.Assert
 import org.mockito.ArgumentMatchers
 import org.mockito.Mockito
+import pl.altkom.coffee.accounting.api.dto.AccountExistsForMemberIdQuery
 import java.math.BigDecimal
 import java.util.*
 
