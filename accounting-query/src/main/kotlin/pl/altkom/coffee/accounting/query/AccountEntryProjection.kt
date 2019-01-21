@@ -42,7 +42,7 @@ class AccountEntryProjection(private val repository: AccountEntryRepository) {
     }
 
     private fun updateAccountEntry(memberId: String, balance: BigDecimal) {
-        var accountEntry = repository.findByMemberId(memberId)
+        val accountEntry = repository.findByMemberId(memberId)
         accountEntry!!.balance = balance
 
         repository.save(accountEntry)
