@@ -1,11 +1,9 @@
 all: build
 
-build: build-jar build-docker
-
-build-jar:
+build:
 	mvn package
 
-build-docker:
+bake:
 	docker build -t csms/coffee-society-accounting:latest .
 
 clean:
